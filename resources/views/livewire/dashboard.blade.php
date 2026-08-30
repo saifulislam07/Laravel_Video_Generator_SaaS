@@ -4,6 +4,7 @@ use App\Exceptions\InsufficientCreditsException;
 use App\Exceptions\RenderException;
 use App\Models\Project;
 use App\Models\VideoRender;
+use App\Services\Social\SocialPublisher;
 use App\Services\VideoRenderService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -29,12 +30,28 @@ new #[Layout('layouts.app')] class extends Component
         }
     }
 
+    public function publish(int $renderId, int $accountId, SocialPublisher $publisher): void
+    {
+        $this->reset('flash', 'error');
+
+        $render = VideoRender::whereHas('project', fn ($q) => $q->where('user_id', Auth::id()))
+            ->findOrFail($renderId);
+        $account = Auth::user()->socialAccounts()->findOrFail($accountId);
+
+        try {
+            $publisher->publish($render, $account);
+            $this->flash = __('Publishing to :name — it will appear once processing finishes.', ['name' => $account->label()]);
+        } catch (\RuntimeException $e) {
+            $this->error = $e->getMessage();
+        }
+    }
+
     /** @return \Illuminate\Support\Collection<int, Project> */
     public function projects()
     {
         return Auth::user()->projects()
             ->withCount('scenes')
-            ->with('latestRender')
+            ->with('latestRender.publications.account')
             ->latest()
             ->get();
     }
@@ -45,6 +62,7 @@ new #[Layout('layouts.app')] class extends Component
 
         return [
             'projects' => $projects,
+            'socialAccounts' => Auth::user()->socialAccounts()->get(),
             'renderingIds' => $projects->filter(
                 fn (Project $p) => in_array($p->latestRender?->status, [VideoRender::STATUS_QUEUED, VideoRender::STATUS_RENDERING], true)
             )->pluck('id')->values(),
@@ -144,6 +162,27 @@ new #[Layout('layouts.app')] class extends Component
                             <button type="button" wire:click="retry({{ $project->id }})"
                                     class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">{{ __('Render again') }}</button>
                         </div>
+
+                        @if ($socialAccounts->isNotEmpty())
+                            <div class="w-full">
+                                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">{{ __('Publish to') }}</p>
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                    @foreach ($socialAccounts as $account)
+                                        @php($pub = $render->publications->firstWhere('social_account_id', $account->id))
+                                        <button type="button"
+                                                wire:click="publish({{ $render->id }}, {{ $account->id }})"
+                                                @disabled($pub && in_array($pub->status, ['pending', 'published']))
+                                                class="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60">
+                                            {{ $account->label() }}
+                                            @if ($pub) &middot; {{ $pub->status }} @endif
+                                        </button>
+                                    @endforeach
+                                </div>
+                                <a href="{{ route('social.index') }}" wire:navigate class="mt-1 inline-block text-xs text-indigo-600 hover:text-indigo-500">{{ __('Manage accounts') }}</a>
+                            </div>
+                        @else
+                            <a href="{{ route('social.index') }}" wire:navigate class="w-full text-xs text-indigo-600 hover:text-indigo-500">{{ __('Connect Facebook / Instagram to publish →') }}</a>
+                        @endif
                     </div>
                 @endif
 

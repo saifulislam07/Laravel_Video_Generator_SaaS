@@ -42,4 +42,12 @@ return [
         'webhook_secret' => env('SHOTSTACK_WEBHOOK_SECRET'),
     ],
 
+    // Meta Graph API — publish finished videos to a Facebook Page / Instagram.
+    'facebook' => [
+        'client_id' => env('FACEBOOK_APP_ID'),
+        'client_secret' => env('FACEBOOK_APP_SECRET'),
+        'redirect' => env('FACEBOOK_REDIRECT_URI'),
+        'graph_version' => env('FACEBOOK_GRAPH_VERSION', 'v21.0'),
+    ],
+
 ];

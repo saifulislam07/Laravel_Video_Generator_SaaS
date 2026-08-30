@@ -146,14 +146,54 @@ class VideoRenderService
         $dirty = $render->isDirty();
         $render->save();
 
+        $transitioned = $status !== $original;
+
         if ($status === VideoRender::STATUS_DONE) {
             $render->project->update(['status' => Project::STATUS_COMPLETED]);
+
+            if (config('video.archive.enabled') && ! $render->archived_at) {
+                \App\Jobs\DownloadRenderJob::dispatch($render);
+            }
+
+            if ($transitioned) {
+                $this->notify($render, new \App\Notifications\RenderCompleted($render));
+            }
         } elseif ($status === VideoRender::STATUS_FAILED) {
             $render->project->update(['status' => Project::STATUS_FAILED]);
+
+            if ($transitioned) {
+                $this->refundCredit($render);
+                $this->notify($render, new \App\Notifications\RenderFailed($render));
+            }
         }
 
-        if ($dirty || $status !== $original) {
+        if ($dirty || $transitioned) {
             ProjectRenderStatusUpdated::dispatch($render->fresh('project'));
+        }
+    }
+
+    private function notify(VideoRender $render, \Illuminate\Notifications\Notification $notification): void
+    {
+        if (config('video.notify_by_email', true)) {
+            $render->project->user->notify($notification);
+        }
+    }
+
+    /** Return the credit spent on a render that ultimately failed. */
+    private function refundCredit(VideoRender $render): void
+    {
+        $cost = (int) config('billing.cost.video_render', 1);
+
+        $alreadyRefunded = $render->project->user->creditTransactions()
+            ->where('reason', 'render_refund')
+            ->where('meta->video_render_id', $render->id)
+            ->exists();
+
+        if ($cost > 0 && ! $alreadyRefunded) {
+            $this->credits->grant($render->project->user, $cost, 'render_refund', [
+                'project_id' => $render->project_id,
+                'video_render_id' => $render->id,
+            ]);
         }
     }
 

@@ -74,6 +74,14 @@ new class extends Component
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
+                        <x-dropdown-link :href="route('billing.history')" wire:navigate>
+                            {{ __('Billing') }}
+                        </x-dropdown-link>
+
+                        <x-dropdown-link :href="route('social.index')" wire:navigate>
+                            {{ __('Connected accounts') }}
+                        </x-dropdown-link>
+
                         <!-- Authentication -->
                         <button wire:click="logout" class="w-full text-start">
                             <x-dropdown-link>

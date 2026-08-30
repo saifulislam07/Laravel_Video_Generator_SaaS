@@ -26,9 +26,16 @@ new #[Layout('layouts.app')] class extends Component
 
     public function with(BillingService $billing): array
     {
+        $gateways = collect(config('billing.gateways'))
+            ->map(fn ($config, $key) => [
+                'label' => $config['label'],
+                'live' => $billing->gateway($key)->isConfigured(),
+            ]);
+
         return [
             'packages' => $billing->packages(),
-            'gateways' => config('billing.gateways'),
+            'gateways' => $gateways,
+            'anyLive' => $gateways->contains(fn ($g) => $g['live']),
             'currency' => config('billing.currency', 'BDT'),
             'credits' => Auth::user()->credits,
         ];
@@ -51,6 +58,7 @@ new #[Layout('layouts.app')] class extends Component
             <label class="inline-flex items-center gap-2">
                 <input type="radio" wire:model="gateway" value="{{ $key }}" class="text-indigo-600 focus:ring-indigo-500" />
                 {{ $config['label'] }}
+                @unless ($config['live']) <span class="text-xs text-amber-500">({{ __('test') }})</span> @endunless
             </label>
         @endforeach
     </div>
@@ -80,9 +88,11 @@ new #[Layout('layouts.app')] class extends Component
         @endforeach
     </div>
 
-    <p class="text-center text-xs text-gray-400">
-        {{ __('Payment gateways (bKash / SSLCommerz) are not connected yet — checkout runs in mock mode.') }}
-    </p>
+    @unless ($anyLive)
+        <p class="text-center text-xs text-gray-400">
+            {{ __('No live payment gateway configured — checkout runs in mock mode (credits are still granted).') }}
+        </p>
+    @endunless
 
   </div>
 </div>

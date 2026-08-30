@@ -56,6 +56,8 @@ class BillingService
             'status' => CreditOrder::STATUS_PENDING,
         ]);
 
+        $order->update(['gateway_ref' => 'VG-'.$order->id]);
+
         return [
             'order' => $order,
             'checkoutUrl' => $gateway->createCharge($order),
@@ -75,7 +77,7 @@ class BillingService
 
         $gateway = $this->gateway($order->gateway);
 
-        if (! $gateway->verify($order, $payload)) {
+        if (! $gateway->confirm($order, $payload)) {
             $order->update(['status' => CreditOrder::STATUS_FAILED]);
 
             return $order;

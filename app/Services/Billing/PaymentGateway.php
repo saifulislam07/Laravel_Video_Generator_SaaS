@@ -6,22 +6,23 @@ use App\Models\CreditOrder;
 
 interface PaymentGateway
 {
-    /**
-     * The config key / identifier for this gateway (e.g. "bkash").
-     */
+    /** The config key / identifier for this gateway (e.g. "bkash"). */
     public function key(): string;
 
+    /** True when live credentials are present; false → mock checkout is used. */
+    public function isConfigured(): bool;
+
     /**
-     * Start a payment for the given order and return the URL the customer
-     * should be redirected to in order to complete it.
+     * Start a payment for the order and return the URL to redirect the
+     * customer to (the gateway's hosted page, or the local mock page).
      */
     public function createCharge(CreditOrder $order): string;
 
     /**
-     * Verify a return/callback payload from the gateway. Returns true when the
-     * payment is confirmed as successful.
+     * Finalise a payment from the gateway's return/callback parameters.
+     * Returns true only when the money has actually been captured.
      *
-     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $params
      */
-    public function verify(CreditOrder $order, array $payload): bool;
+    public function confirm(CreditOrder $order, array $params): bool;
 }

@@ -39,6 +39,9 @@ composer install --no-dev --optimize-autoloader
 # 2.3 Front-end assets (or copy public/build from CI)
 npm ci && npm run build
 
+# 2.3b AdminLTE static assets for the admin panel (published to public/vendor)
+php artisan adminlte:install --only=assets --force
+
 # 2.4 Environment
 cp .env.production.example .env
 php artisan key:generate
@@ -137,6 +140,21 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ---
 
+## 7a. Payment gateways (bKash / SSLCommerz)
+
+Leave the `BKASH_*` / `SSLCZ_*` vars blank to run checkout in **mock mode** (credits
+still granted — useful for staging). To go live, fill the credentials in `.env`:
+
+- **bKash** — Tokenized Checkout (v1.2.0-beta). Set `BKASH_APP_KEY/APP_SECRET/USERNAME/PASSWORD`
+  and `BKASH_SANDBOX=false`. No dashboard callback config needed — the app passes a
+  per-payment `callbackURL` (`/billing/callback/bkash`).
+- **SSLCommerz** — set `SSLCZ_STORE_ID/STORE_PASSWORD`, `SSLCZ_SANDBOX=false`. In the
+  SSLCommerz panel set the store's URLs to `https://your-domain.com/billing/callback/sslcommerz`
+  (success/fail/cancel/IPN all point there; the app disambiguates via `?result=`).
+
+Both callback routes are CSRF-exempt and grant credits server-side, so a dropped
+session cookie on the gateway's cross-site POST does not lose the purchase.
+
 ## 8. Redeploy checklist
 
 ```bash
@@ -146,6 +164,7 @@ git pull
 composer install --no-dev --optimize-autoloader
 npm ci && npm run build
 php artisan migrate --force
+php artisan adminlte:install --only=assets --force
 php artisan config:cache route:cache view:cache event:cache
 php artisan queue:restart        # or: php artisan horizon:terminate
 php artisan reverb:restart

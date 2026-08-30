@@ -56,6 +56,12 @@ class User extends Authenticatable
         return $this->hasMany(CreditOrder::class)->latest();
     }
 
+    /** @return HasMany<SocialAccount> */
+    public function socialAccounts(): HasMany
+    {
+        return $this->hasMany(SocialAccount::class);
+    }
+
     public function hasCredits(int $amount = 1): bool
     {
         return $this->credits >= $amount;

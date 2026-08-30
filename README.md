@@ -19,8 +19,10 @@ Built with **Laravel 13, Livewire 3 + Volt, Tailwind, Alpine, Laravel Reverb**.
 - Cloud render + self-polling status job + Shotstack webhook
 - Real-time status via Reverb / Echo (with `wire:poll` fallback)
 - Dashboard: project list, in-browser video player, download, retry
-- Credit system (5 free), `credit_transactions` ledger, pricing page, **stubbed** bKash / SSLCommerz checkout
-- Admin panel (spatie/laravel-permission): users & credits, system character CRUD, render moderation, stats
+- Credit system (5 free), `credit_transactions` ledger, pricing page, bKash / SSLCommerz checkout (real API + mock fallback), auto-refund on render failure
+- Render email notifications; optional S3 archiving of finished videos
+- One-click publish to a Facebook Page / Instagram Reels (Meta Graph API)
+- Admin panel — **AdminLTE 3** (`jeroennoten/laravel-adminlte`), spatie/laravel-permission: users & credits, system character CRUD, render moderation, stats
 
 See [`PROJECT_PLAN.md`](PROJECT_PLAN.md) for the full design & phase roadmap and
 [`DEPLOYMENT.md`](DEPLOYMENT.md) for production setup.
@@ -51,6 +53,7 @@ mysql -u root -e "CREATE DATABASE video_generator CHARACTER SET utf8mb4 COLLATE 
 
 php artisan migrate --seed        # seeds admin + system characters + a test user
 php artisan storage:link
+php artisan adminlte:install --only=assets   # admin panel static assets → public/vendor
 npm run build
 ```
 
@@ -99,7 +102,10 @@ Stage renders are free and watermarked; `SHOTSTACK_ENV=production` is paid & cle
 | `SHOTSTACK_TEMPLATE_ID` | Optional Shotstack template id (reserved) |
 | `SHOTSTACK_WEBHOOK_SECRET` | If set, a signed `callback` URL is added to each render and verified on the webhook |
 | `BROADCAST_CONNECTION` / `REVERB_*` / `VITE_REVERB_*` | Laravel Reverb (real-time) |
-| `BKASH_*` / `SSLCZ_*` | Payment gateways — **not wired yet**, structure only |
+| `BKASH_*` / `SSLCZ_*` | Payment gateways — real API when set, mock checkout when blank |
+| `RENDER_ARCHIVE_ENABLED` / `RENDER_ARCHIVE_DISK` | Copy finished renders to a durable disk (default off) |
+| `RENDER_NOTIFICATIONS_ENABLED` | Email the owner on render done/failed (default on) |
+| `FACEBOOK_APP_ID` / `FACEBOOK_APP_SECRET` / `FACEBOOK_REDIRECT_URI` | Meta Graph API for publishing to FB/IG (optional) |
 
 Full lists: [`.env.example`](.env.example) (local), [`.env.production.example`](.env.production.example) (production).
 

@@ -1,12 +1,23 @@
 <?php
 
+use App\Http\Controllers\BillingCallbackController;
 use App\Http\Controllers\ShotstackWebhookController;
+use App\Http\Controllers\SocialConnectController;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
 Route::view('/', 'welcome');
 
+Route::post('logout', function (App\Livewire\Actions\Logout $logout) {
+    $logout();
+
+    return redirect('/');
+})->middleware('auth')->name('logout');
+
 Route::post('webhooks/shotstack', ShotstackWebhookController::class)->name('webhooks.shotstack');
+
+Route::match(['get', 'post'], 'billing/callback/{gateway}', BillingCallbackController::class)
+    ->name('billing.callback');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('dashboard', 'dashboard')->name('dashboard');
@@ -20,6 +31,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('pricing', 'billing.pricing')->name('billing.pricing');
     Volt::route('billing', 'billing.history')->name('billing.history');
     Volt::route('billing/checkout/{order}', 'billing.mock-gateway')->name('billing.mock');
+
+    Volt::route('social', 'social.accounts')->name('social.index');
+    Route::get('social/facebook/connect', [SocialConnectController::class, 'connect'])->name('social.connect');
+    Route::get('social/facebook/callback', [SocialConnectController::class, 'callback'])->name('social.callback');
 });
 
 Route::middleware(['auth', 'verified', 'role:'.\App\Models\User::ROLE_ADMIN])

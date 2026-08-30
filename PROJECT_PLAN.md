@@ -154,7 +154,7 @@ failed    ─► error message + "আবার চেষ্টা করুন"
 - **ক্যারেক্টার আর্ট**: Phase 3-এ placeholder PNG; আসল কার্টুন আর্ট তৈরি হলে প্রতিস্থাপন
 - **Reverb বনাম wire:poll**: Reverb না চললে fallback হিসেবে Livewire `wire:poll`
 - **পেমেন্ট গেটওয়ে**: Phase 8-এ শুধু স্ট্রাকচার + UI; লাইভ কানেকশন পরে
-- **অ্যাডমিন প্যানেল UI**: প্রম্পটে AdminLTE বলা ছিল, কিন্তু পুরো অ্যাপ Tailwind + Livewire/Volt — তাই কনসিস্টেন্সির জন্য অ্যাডমিন প্যানেলও Tailwind + Volt দিয়ে বানানো হয়েছে (Bootstrap/AdminLTE আনা হয়নি)। রোল/পারমিশন: `spatie/laravel-permission`
+- **অ্যাডমিন প্যানেল UI**: `jeroennoten/laravel-adminlte` (AdminLTE 3) দিয়ে বানানো — কাস্টমার-ফেসিং অ্যাপ Tailwind + Volt-ই আছে, শুধু `/admin/*` AdminLTE। Livewire Volt কম্পোনেন্ট `layouts.admin` র‍্যাপার দিয়ে `adminlte::page`-এ রেন্ডার হয় (nested `@extends` এড়াতে)। রোল/পারমিশন: `spatie/laravel-permission`
 
 ## 8. সিদ্ধান্ত: ভিডিও ডেলিভারি — CDN URL বনাম লোকাল কপি (Phase 7)
 
@@ -168,5 +168,5 @@ failed    ─► error message + "আবার চেষ্টা করুন"
 
 **সিদ্ধান্ত (এখন): সরাসরি CDN URL।** `video_renders.output_url`-এ Shotstack CDN লিংক রাখা হয়, ড্যাশবোর্ডের HTML5 প্লেয়ার ও ডাউনলোড বাটন ওটাই ব্যবহার করে। কারণ — MVP-তে সস্তা, শূন্য সেটআপ, আর ইউজাররা সাধারণত রেন্ডারের পরপরই ডাউনলোড করে ফেলে।
 
-**পরে যখন দরকার হবে** (ইউজার লাইব্রেরি স্থায়ী রাখতে চাইলে বা production URL expiry সমস্যা হলে): `syncStatus()`-এ done হওয়ার পর একটা `DownloadRenderJob` ডিসপ্যাচ করে `output_url` → S3/`public` disk-এ কপি করে সেই লোকাল URL দিয়ে রিপ্লেস করা। স্কিমা বদলাতে হবে না।
+**✅ ইমপ্লিমেন্টেড (ফলো-আপ #2):** `RENDER_ARCHIVE_ENABLED=true` করলে রেন্ডার done হওয়ার পর `DownloadRenderJob` ডিসপ্যাচ হয় — Shotstack CDN থেকে ভিডিও ডাউনলোড করে `RENDER_ARCHIVE_DISK` (ডিফল্ট `s3`)-এ কপি করে, আসল URL `video_renders.source_url`-এ রেখে `output_url` আর্কাইভ URL দিয়ে রিপ্লেস করে। ডিফল্ট off (লোকাল/MVP-তে CDN URL সরাসরি)।
 ```

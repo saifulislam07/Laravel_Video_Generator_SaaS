@@ -38,6 +38,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Render archiving
+    |--------------------------------------------------------------------------
+    | Shotstack CDN URLs are temporary (stage renders expire in ~24h). When
+    | enabled, a finished render is copied to a durable disk and its public
+    | URL replaces the Shotstack one.
+    */
+    'archive' => [
+        'enabled' => env('RENDER_ARCHIVE_ENABLED', false),
+        'disk' => env('RENDER_ARCHIVE_DISK', 's3'),
+        'directory' => 'renders',
+    ],
+
+    // Email the project owner when a render finishes or fails.
+    'notify_by_email' => env('RENDER_NOTIFICATIONS_ENABLED', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Shotstack render settings
     |--------------------------------------------------------------------------
     */

@@ -51,6 +51,9 @@ return [
             'username' => env('BKASH_USERNAME'),
             'password' => env('BKASH_PASSWORD'),
             'sandbox' => env('BKASH_SANDBOX', true),
+            'base_url' => env('BKASH_SANDBOX', true)
+                ? 'https://tokenized.sandbox.bka.sh/v1.2.0-beta/tokenized/checkout'
+                : 'https://tokenized.pay.bka.sh/v1.2.0-beta/tokenized/checkout',
         ],
         'sslcommerz' => [
             'driver' => \App\Services\Billing\SslcommerzGateway::class,
@@ -58,6 +61,9 @@ return [
             'store_id' => env('SSLCZ_STORE_ID'),
             'store_password' => env('SSLCZ_STORE_PASSWORD'),
             'sandbox' => env('SSLCZ_SANDBOX', true),
+            'base_url' => env('SSLCZ_SANDBOX', true)
+                ? 'https://sandbox.sslcommerz.com'
+                : 'https://securepay.sslcommerz.com',
         ],
     ],
 ];
