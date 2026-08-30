@@ -22,13 +22,26 @@ class VideoRenderService
         'failed' => VideoRender::STATUS_FAILED,
     ];
 
-    public function __construct(private readonly ShotstackPayloadBuilder $payloadBuilder) {}
+    public function __construct(
+        private readonly ShotstackPayloadBuilder $payloadBuilder,
+        private readonly CreditService $credits,
+    ) {}
 
     /**
      * Build the payload, submit it to Shotstack and start tracking the render.
+     *
+     * @throws \App\Exceptions\InsufficientCreditsException
+     * @throws RenderException
      */
     public function submit(Project $project): VideoRender
     {
+        $cost = (int) config('billing.cost.video_render', 1);
+        $user = $project->user;
+
+        if (! $user->hasCredits($cost)) {
+            throw new \App\Exceptions\InsufficientCreditsException();
+        }
+
         $payload = $this->payloadBuilder->build($project);
 
         if ($callback = $this->callbackUrl()) {
@@ -46,6 +59,11 @@ class VideoRenderService
         $render = $project->videoRenders()->create([
             'shotstack_render_id' => $renderId,
             'status' => VideoRender::STATUS_QUEUED,
+        ]);
+
+        $this->credits->charge($user, $cost, 'video_render', [
+            'project_id' => $project->id,
+            'video_render_id' => $render->id,
         ]);
 
         $project->update(['status' => Project::STATUS_RENDERING]);

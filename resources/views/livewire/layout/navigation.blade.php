@@ -39,11 +39,23 @@ new class extends Component
                     <x-nav-link :href="route('assets.gallery')" :active="request()->routeIs('assets.*')" wire:navigate>
                         {{ __('Assets') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('billing.pricing')" :active="request()->routeIs('billing.*')" wire:navigate>
+                        {{ __('Pricing') }}
+                    </x-nav-link>
+                    @if (auth()->user()?->isAdmin())
+                        <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')" wire:navigate>
+                            {{ __('Admin') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <a href="{{ route('billing.history') }}" wire:navigate
+                   class="me-4 inline-flex items-center rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-300">
+                    {{ auth()->user()->credits }} {{ __('credits') }}
+                </a>
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
@@ -95,6 +107,9 @@ new class extends Component
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('assets.gallery')" :active="request()->routeIs('assets.*')" wire:navigate>
                 {{ __('Assets') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('billing.pricing')" :active="request()->routeIs('billing.*')" wire:navigate>
+                {{ __('Pricing') }} ({{ auth()->user()->credits }} {{ __('credits') }})
             </x-responsive-nav-link>
         </div>
 

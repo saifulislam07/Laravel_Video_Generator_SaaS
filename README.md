@@ -1,58 +1,136 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Video Generator SaaS
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Put a **cartoon character on a real background photo** and render a short vertical
+video (Reels / Shorts, 1080×1920) for Facebook & Instagram. Rendering is done in
+the cloud by the **Shotstack Edit API** — the app builds the timeline, submits it,
+tracks status in real time and delivers the MP4.
 
-## About Laravel
+Built with **Laravel 13, Livewire 3 + Volt, Tailwind, Alpine, Laravel Reverb**.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Email/password auth (Laravel Breeze, Livewire stack)
+- Background image upload with auto-resize/optimise (Intervention Image)
+- System cartoon character library with multiple poses (placeholder art included)
+- Project → ordered scenes; per scene: background, character pose (drag to position + scale), caption, duration
+- Drag-to-reorder scenes, preview timeline, live Shotstack payload preview
+- Cloud render + self-polling status job + Shotstack webhook
+- Real-time status via Reverb / Echo (with `wire:poll` fallback)
+- Dashboard: project list, in-browser video player, download, retry
+- Credit system (5 free), `credit_transactions` ledger, pricing page, **stubbed** bKash / SSLCommerz checkout
+- Admin panel (spatie/laravel-permission): users & credits, system character CRUD, render moderation, stats
 
-## Learning Laravel
+See [`PROJECT_PLAN.md`](PROJECT_PLAN.md) for the full design & phase roadmap and
+[`DEPLOYMENT.md`](DEPLOYMENT.md) for production setup.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Local setup
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### Requirements
 
-## Agentic Development
+- PHP **8.3+** with `gd`, `pdo_mysql`, `mbstring`, `intl`, `curl`, `zip`, `bcmath`
+- Composer 2, Node 20+
+- MySQL 8 (or SQLite for a quick start)
+- Redis is **optional** locally — the app falls back to the `database` queue driver
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### Install
 
 ```bash
-composer require laravel/boost --dev
+composer install
+npm install
 
-php artisan boost:install
+cp .env.example .env
+php artisan key:generate
+
+# MySQL (matches .env.example defaults: DB_CONNECTION=mysql, DB_DATABASE=video_generator)
+mysql -u root -e "CREATE DATABASE video_generator CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+#   …or use SQLite: set DB_CONNECTION=sqlite in .env and `touch database/database.sqlite`
+
+php artisan migrate --seed        # seeds admin + system characters + a test user
+php artisan storage:link
+npm run build
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Seeded logins (**change in production**):
 
-## Contributing
+| Role | Email | Password |
+| --- | --- | --- |
+| User | `test@example.com` | `password` |
+| Admin | `admin@example.com` | `password` |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Run
 
-## Code of Conduct
+```bash
+php artisan serve                 # http://localhost:8000
+npm run dev                       # asset watcher (separate terminal; creates public/hot)
+php artisan queue:work            # required for renders to progress
+php artisan reverb:start          # optional — real-time status (else wire:poll is used)
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+> If pages look unstyled: `npm run dev` isn't running and `public/hot` is stale —
+> delete `public/hot` or run `npm run build`.
 
-## Security Vulnerabilities
+### Rendering videos
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Renders need a Shotstack key. Create a free **stage** key at
+<https://dashboard.shotstack.io/> and set in `.env`:
 
-## License
+```
+SHOTSTACK_API_KEY=your-stage-key
+SHOTSTACK_ENV=stage
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Without a key the "Render video" button shows a clear error; everything else works.
+Stage renders are free and watermarked; `SHOTSTACK_ENV=production` is paid & clean.
+
+---
+
+## Environment variables
+
+| Key | Purpose |
+| --- | --- |
+| `APP_URL` | Public URL — Shotstack fetches uploaded images from `APP_URL/storage/...`, so it must be reachable |
+| `DB_*` | Database connection |
+| `QUEUE_CONNECTION` | `database` locally, `redis` in production |
+| `SHOTSTACK_API_KEY` / `SHOTSTACK_ENV` | Shotstack Edit API credentials (`stage` \| `production`) |
+| `SHOTSTACK_TEMPLATE_ID` | Optional Shotstack template id (reserved) |
+| `SHOTSTACK_WEBHOOK_SECRET` | If set, a signed `callback` URL is added to each render and verified on the webhook |
+| `BROADCAST_CONNECTION` / `REVERB_*` / `VITE_REVERB_*` | Laravel Reverb (real-time) |
+| `BKASH_*` / `SSLCZ_*` | Payment gateways — **not wired yet**, structure only |
+
+Full lists: [`.env.example`](.env.example) (local), [`.env.production.example`](.env.production.example) (production).
+
+---
+
+## Configuration knobs
+
+- [`config/video.php`](config/video.php) — output canvas (1080×1920), upload rules, scene duration limits, Shotstack caption styling
+- [`config/billing.php`](config/billing.php) — free credits, cost per render, credit packages, gateway map
+
+---
+
+## Tests
+
+```bash
+php artisan test
+```
+
+Pest feature suite covers auth, asset upload, scene builder, the Shotstack payload
+builder, the render pipeline (mocked HTTP), credits/billing, the admin panel, and a
+sign-up → render end-to-end flow.
+
+---
+
+## Key directories
+
+```
+app/Services/                 ShotstackPayloadBuilder, VideoRenderService, CreditService,
+                              BackgroundImageService, CharacterService, Billing/*
+app/Jobs/CheckRenderStatusJob.php    self-requeuing render poller
+app/Events/ProjectRenderStatusUpdated.php   broadcast on projects.{id}
+resources/views/livewire/     Volt page + component classes (dashboard, projects/*, billing/*, admin/*)
+deploy/                        supervisor + nginx config examples
+```

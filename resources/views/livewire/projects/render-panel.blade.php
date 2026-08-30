@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\InsufficientCreditsException;
 use App\Exceptions\RenderException;
 use App\Models\Project;
 use App\Models\VideoRender;
@@ -12,6 +13,7 @@ new class extends Component
     public Project $project;
 
     public ?string $error = null;
+    public bool $outOfCredits = false;
 
     public function mount(Project $project): void
     {
@@ -22,9 +24,13 @@ new class extends Component
     {
         $this->authorize('update', $this->project);
         $this->error = null;
+        $this->outOfCredits = false;
 
         try {
             $service->submit($this->project->fresh());
+        } catch (InsufficientCreditsException $e) {
+            $this->outOfCredits = true;
+            $this->error = $e->getMessage();
         } catch (RenderException $e) {
             $this->error = $e->getMessage();
         }
@@ -103,7 +109,12 @@ new class extends Component
     </div>
 
     @if ($error)
-        <p class="mt-3 rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-300">{{ $error }}</p>
+        <p class="mt-3 rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-300">
+            {{ $error }}
+            @if ($outOfCredits)
+                <a href="{{ route('billing.pricing') }}" wire:navigate class="font-semibold underline">{{ __('Upgrade') }}</a>
+            @endif
+        </p>
     @endif
 
     @if ($latest?->status === 'rendering' || $latest?->status === 'queued')

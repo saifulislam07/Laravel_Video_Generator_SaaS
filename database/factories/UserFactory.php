@@ -30,6 +30,7 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'credits' => config('billing.signup_credits', 5),
         ];
     }
 
@@ -41,5 +42,22 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    public function credits(int $credits): static
+    {
+        return $this->state(['credits' => $credits]);
+    }
+
+    public function broke(): static
+    {
+        return $this->state(['credits' => 0]);
+    }
+
+    public function admin(): static
+    {
+        return $this->afterCreating(fn (\App\Models\User $user) => $user->assignRole(
+            \Spatie\Permission\Models\Role::findOrCreate(\App\Models\User::ROLE_ADMIN)
+        ));
     }
 }

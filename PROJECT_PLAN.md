@@ -137,14 +137,13 @@ failed    ─► error message + "আবার চেষ্টা করুন"
 
 ## 6. বর্তমান অবস্থা (Phase 0 সম্পন্ন হওয়ার সময়)
 
-- ✅ Laravel 13 স্কেলেটন, Livewire 3 + Volt, Tailwind + Vite ইনস্টলড
-- ✅ Laravel Breeze (Livewire স্ট্যাক) — login/register/dashboard/profile scaffolding
-- ✅ `QUEUE_CONNECTION=database`, jobs + failed_jobs মাইগ্রেশন উপস্থিত
-- ✅ SQLite ডাটাবেজ (লোকাল)
-- ⬜ `.env.example`-এ Shotstack placeholder ভ্যারিয়েবল
-- ⬜ প্রজেক্ট/ভিডিও তালিকার জন্য কাস্টম ড্যাশবোর্ড লেআউট
-- ⬜ কিউ মনিটরিং সিদ্ধান্ত (Horizon যদি Redis থাকে, নয়তো বিকল্প)
-- ⬜ Phase 2–10
+- ✅ **সব ১০টি ফেজ সম্পন্ন** (2026-08-30)। ৯২টি Pest টেস্ট পাস।
+- ✅ Laravel 13 + Livewire 3/Volt + Tailwind; Breeze auth; MySQL (`video_generator`)
+- ✅ Phase 1–2: queue (database), queue-health widget, স্কিমা (projects/characters/character_poses/scenes/scene_characters/video_renders/background_images)
+- ✅ Phase 3–4: অ্যাসেট আপলোড (Intervention v4), সিস্টেম ক্যারেক্টার সিডার, সিন বিল্ডার (Alpine drag + @alpinejs/sort), preview timeline
+- ✅ Phase 5–7: ShotstackPayloadBuilder, VideoRenderService + CheckRenderStatusJob + webhook, Reverb broadcasting, ইউজার ড্যাশবোর্ড (player/download/retry)
+- ✅ Phase 8–10: ক্রেডিট/বিলিং + stub gateways + pricing, অ্যাডমিন প্যানেল (spatie), DEPLOYMENT.md + deploy/ configs + .env.production.example + README
+- ℹ️ Horizon লোকালে ইনস্টল হয়নি (Windows-এ `pcntl`/`posix` নেই) — DEPLOYMENT.md-তে সার্ভারে ইনস্টলের ধাপ আছে
 
 ## 7. ঝুঁকি ও সিদ্ধান্ত (পরে বিবেচ্য)
 
@@ -155,6 +154,7 @@ failed    ─► error message + "আবার চেষ্টা করুন"
 - **ক্যারেক্টার আর্ট**: Phase 3-এ placeholder PNG; আসল কার্টুন আর্ট তৈরি হলে প্রতিস্থাপন
 - **Reverb বনাম wire:poll**: Reverb না চললে fallback হিসেবে Livewire `wire:poll`
 - **পেমেন্ট গেটওয়ে**: Phase 8-এ শুধু স্ট্রাকচার + UI; লাইভ কানেকশন পরে
+- **অ্যাডমিন প্যানেল UI**: প্রম্পটে AdminLTE বলা ছিল, কিন্তু পুরো অ্যাপ Tailwind + Livewire/Volt — তাই কনসিস্টেন্সির জন্য অ্যাডমিন প্যানেলও Tailwind + Volt দিয়ে বানানো হয়েছে (Bootstrap/AdminLTE আনা হয়নি)। রোল/পারমিশন: `spatie/laravel-permission`
 
 ## 8. সিদ্ধান্ত: ভিডিও ডেলিভারি — CDN URL বনাম লোকাল কপি (Phase 7)
 

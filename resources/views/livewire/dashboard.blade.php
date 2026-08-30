@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\InsufficientCreditsException;
 use App\Exceptions\RenderException;
 use App\Models\Project;
 use App\Models\VideoRender;
@@ -23,7 +24,7 @@ new #[Layout('layouts.app')] class extends Component
         try {
             $service->submit($project);
             $this->flash = __('Render restarted for “:title”.', ['title' => $project->title]);
-        } catch (RenderException $e) {
+        } catch (InsufficientCreditsException|RenderException $e) {
             $this->error = $e->getMessage();
         }
     }
@@ -89,8 +90,8 @@ new #[Layout('layouts.app')] class extends Component
         </div>
         <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
             <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('Credits left') }}</p>
-            <p class="mt-1 text-2xl font-bold">&mdash;</p>
-            <p class="text-xs text-gray-400">{{ __('added in Phase 8') }}</p>
+            <p class="mt-1 text-2xl font-bold">{{ auth()->user()->credits }}</p>
+            <a href="{{ route('billing.pricing') }}" wire:navigate class="text-xs font-medium text-indigo-600 hover:text-indigo-500">{{ __('Buy more') }}</a>
         </div>
     </div>
 
